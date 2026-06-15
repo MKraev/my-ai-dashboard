@@ -1,0 +1,35 @@
+HTML
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Моят AI Токен Дашборд</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; text-align: center; padding: 40px; }
+        .container { max-width: 600px; background: white; margin: 0 auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Използвани AI Токени</h1>
+        <p>Архитектура: GitOps (GitHub Pages)</p>
+        <canvas id="tokenChart"></canvas>
+    </div>
+    <script>
+        const ctx = document.getElementById('tokenChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Входни (Промпт)', 'Изходни (Отговор)', 'Общо изразходвани'],
+                datasets: [{
+                    label: 'Брой Токени (Разговор 1)',
+                    data: [500, 2200, 2700],
+                    backgroundColor: ['#3498db', '#2ecc71', '#e74c3c']
+                }]
+            }
+        });
+    </script>
+</body>
+</html>
