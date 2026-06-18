@@ -1,25 +1,33 @@
-## 📊 Моят Токен Тракер (Дневен Лимит: 50К)
+<div id="ai-token-dashboard" style="max-width: 500px; font-family: sans-serif; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+  <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;">📊 AI Token Usage Monitor (Limit: 50K)</h3>
 
-### 🔹 Gemini
-**34,250 / 50,000 токена**
-<div>
-  <kbd>
-    <img src="https://geps.dev/progress/68?dangerColor=ff0000&warningColor=ffa500&successColor=4285f4" alt="Gemini Progress" />
-  </kbd>
-</div>
+  <div class="provider-row" style="margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
+      <span>🔹 Gemini</span>
+      <span id="text-gemini" style="color: #666; font-weight: normal;">0 / 50,000</span>
+    </div>
+    <div style="width: 100%; height: 16px; background: #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div id="bar-gemini" style="width: 0%; height: 100%; background: linear-gradient(90deg, #1a73e8, #4285f4); transition: width 0.5s ease-in-out;"></div>
+    </div>
+  </div>
 
-### 🟢 OpenAI
-**12,100 / 50,000 токена**
-<div>
-  <kbd>
-    <img src="https://geps.dev/progress/24?dangerColor=ff0000&warningColor=ffa500&successColor=10a37f" alt="OpenAI Progress" />
-  </kbd>
-</div>
+  <div class="provider-row" style="margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
+      <span>🟢 OpenAI</span>
+      <span id="text-openai" style="color: #666; font-weight: normal;">0 / 50,000</span>
+    </div>
+    <div style="width: 100%; height: 16px; background: #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div id="bar-openai" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10a37f, #1aa37f); transition: width 0.5s ease-in-out;"></div>
+    </div>
+  </div>
 
-### 🟠 Claude
-**2,500 / 50,000 токена**
-<div>
-  <kbd>
-    <img src="https://geps.dev/progress/5?dangerColor=ff0000&warningColor=ffa500&successColor=d97753" alt="Claude Progress" />
-  </kbd>
+  <div class="provider-row" style="margin-bottom: 5px;">
+    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
+      <span>🟠 Claude</span>
+      <span id="text-claude" style="color: #666; font-weight: normal;">0 / 50,000</span>
+    </div>
+    <div style="width: 100%; height: 16px; background: #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div id="bar-claude" style="width: 0%; height: 100%; background: linear-gradient(90deg, #d97753, #e05722); transition: width 0.5s ease-in-out;"></div>
+    </div>
+  </div>
 </div>
