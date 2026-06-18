@@ -1,0 +1,37 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const TOKEN_LIMIT = 50000;
+
+  // Пътят към JSON файла в твоя GitHub дашборд
+  fetch('ai_token_dashboard_data.json')
+    .then(response => {
+      if (!response.ok) throw new Error("Файлът с токени все още не съществува в хранилището.");
+      return response.json();
+    })
+    .then(data => {
+      const providers = data.providers || {};
+      const targetProviders = ['gemini', 'openai', 'claude'];
+
+      targetProviders.forEach(p => {
+        const stats = providers[p] || { promptTokens: 0, completionTokens: 0 };
+        const totalUsed = (stats.promptTokens || 0) + (stats.completionTokens || 0);
+
+        // Изчисляване на процента за запълване
+        let percentage = (totalUsed / TOKEN_LIMIT) * 100;
+        if (percentage > 100) percentage = 100; // Заковаваме на 100%, ако превиши лимита
+
+        // Намиране на HTML елементите на страницата
+        const barElement = document.getElementById(`bar-${p}`);
+        const textElement = document.getElementById(`text-${p}`);
+
+        if (barElement && textElement) {
+          // Анимираме прогрес бара на екрана
+          barElement.style.width = `${percentage}%`;
+          // Изписваме точната бройка с хубаво форматирани числа
+          textElement.innerText = `${totalUsed.toLocaleString()} / ${TOKEN_LIMIT.toLocaleString()}`;
+        }
+      });
+    })
+    .catch(error => {
+      console.warn("Грешка при зареждане на токен дашборда:", error.message);
+    });
+});
