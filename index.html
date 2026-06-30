@@ -1,33 +1,323 @@
-<div id="ai-token-dashboard" style="max-width: 500px; font-family: sans-serif; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-  <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;">📊 AI Token Usage Monitor (Limit: 50K)</h3>
+<div id="ai-token-dashboard">
+  <div class="dashboard-card">
+    <header class="dashboard-header">
+      <div>
+        <h3>📊 AI Token Usage Monitor</h3>
+        <p>Live usage overview</p>
+      </div>
+      <div class="dashboard-badge">Usage snapshot</div>
+    </header>
 
-  <div class="provider-row" style="margin-bottom: 15px;">
-    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
-      <span>🔹 Gemini</span>
-      <span id="text-gemini" style="color: #666; font-weight: normal;">0 / 50,000</span>
+    <div class="dashboard-import">
+      <label class="import-label" for="jsonFile">Load TokenTracker JSON:</label>
+      <input id="jsonFile" type="file" accept="application/json" />
+      <div class="import-hint">Select the exported `ai_token_dashboard_data.json` file from the extension.</div>
     </div>
-    <div style="width: 100%; height: 16px; background: #e0e0e0; border-radius: 8px; overflow: hidden;">
-      <div id="bar-gemini" style="width: 0%; height: 100%; background: linear-gradient(90deg, #1a73e8, #4285f4); transition: width 0.5s ease-in-out;"></div>
-    </div>
-  </div>
 
-  <div class="provider-row" style="margin-bottom: 15px;">
-    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
-      <span>🟢 OpenAI</span>
-      <span id="text-openai" style="color: #666; font-weight: normal;">0 / 50,000</span>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Current month P</div>
+        <div id="text-current-p" class="summary-value">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Current month C</div>
+        <div id="text-current-c" class="summary-value">0</div>
+      </div>
+      <div class="summary-card summary-card--wide">
+        <div class="summary-label">Total this month</div>
+        <div id="text-current-total" class="summary-value">0</div>
+      </div>
     </div>
-    <div style="width: 100%; height: 16px; background: #e0e0e0; border-radius: 8px; overflow: hidden;">
-      <div id="bar-openai" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10a37f, #1aa37f); transition: width 0.5s ease-in-out;"></div>
-    </div>
-  </div>
 
-  <div class="provider-row" style="margin-bottom: 5px;">
-    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
-      <span>🟠 Claude</span>
-      <span id="text-claude" style="color: #666; font-weight: normal;">0 / 50,000</span>
-    </div>
-    <div style="width: 100%; height: 16px; background: #e0e0e0; border-radius: 8px; overflow: hidden;">
-      <div id="bar-claude" style="width: 0%; height: 100%; background: linear-gradient(90deg, #d97753, #e05722); transition: width 0.5s ease-in-out;"></div>
+    <div class="providers">
+      <div class="provider-card">
+        <div class="provider-row">
+          <div>
+            <span class="provider-icon">🔹</span>
+            <span class="provider-title">Gemini</span>
+          </div>
+          <span id="text-gemini" class="provider-value">0 tokens</span>
+        </div>
+        <div class="provider-bar-bg">
+          <div id="bar-gemini" class="provider-bar provider-bar--gemini"></div>
+        </div>
+      </div>
+
+      <div class="provider-card">
+        <div class="provider-row">
+          <div>
+            <span class="provider-icon">🟢</span>
+            <span class="provider-title">OpenAI</span>
+          </div>
+          <span id="text-openai" class="provider-value">0 tokens</span>
+        </div>
+        <div class="provider-bar-bg">
+          <div id="bar-openai" class="provider-bar provider-bar--openai"></div>
+        </div>
+      </div>
+
+      <div class="provider-card">
+        <div class="provider-row">
+          <div>
+            <span class="provider-icon">🟠</span>
+            <span class="provider-title">Claude</span>
+          </div>
+          <span id="text-claude" class="provider-value">0 tokens</span>
+        </div>
+        <div class="provider-bar-bg">
+          <div id="bar-claude" class="provider-bar provider-bar--claude"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+  const jsonFile = document.getElementById('jsonFile');
+  const currentP = document.getElementById('text-current-p');
+  const currentC = document.getElementById('text-current-c');
+  const currentTotal = document.getElementById('text-current-total');
+  const geminiText = document.getElementById('text-gemini');
+  const openaiText = document.getElementById('text-openai');
+  const claudeText = document.getElementById('text-claude');
+  const geminiBar = document.getElementById('bar-gemini');
+  const openaiBar = document.getElementById('bar-openai');
+  const claudeBar = document.getElementById('bar-claude');
+
+  jsonFile.addEventListener('change', async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const providers = data.providers || {};
+      const monthlyTotals = data.monthlyTotals || {};
+      const monthKeys = Object.keys(monthlyTotals).sort().reverse();
+      const currentMonthKey = monthKeys[0] || null;
+      const currentMonthData = currentMonthKey ? monthlyTotals[currentMonthKey] : null;
+
+      const geminiData = providers.gemini || { promptTokens: 0, completionTokens: 0 };
+      const openaiData = providers.openai || { promptTokens: 0, completionTokens: 0 };
+      const claudeData = providers.claude || { promptTokens: 0, completionTokens: 0 };
+
+      const geminiPrompt = geminiData.promptTokens || 0;
+      const geminiCompletion = geminiData.completionTokens || 0;
+      const openaiPrompt = openaiData.promptTokens || 0;
+      const openaiCompletion = openaiData.completionTokens || 0;
+      const claudePrompt = claudeData.promptTokens || 0;
+      const claudeCompletion = claudeData.completionTokens || 0;
+
+      const providerPromptTotal = geminiPrompt + openaiPrompt + claudePrompt;
+      const providerCompletionTotal = geminiCompletion + openaiCompletion + claudeCompletion;
+      const modelTotal = providerPromptTotal + providerCompletionTotal;
+      const maxValue = Math.max(geminiPrompt + geminiCompletion, openaiPrompt + openaiCompletion, claudePrompt + claudeCompletion, 1);
+
+      const displayPrompt = (currentMonthData && (currentMonthData.promptTokens || currentMonthData.completionTokens)) ? currentMonthData.promptTokens || providerPromptTotal : providerPromptTotal;
+      const displayCompletion = (currentMonthData && (currentMonthData.promptTokens || currentMonthData.completionTokens)) ? currentMonthData.completionTokens || providerCompletionTotal : providerCompletionTotal;
+
+      currentP.innerText = `${displayPrompt.toLocaleString()} tokens`;
+      currentC.innerText = `${displayCompletion.toLocaleString()} tokens`;
+      currentTotal.innerText = `${modelTotal.toLocaleString()} tokens`;
+
+      geminiText.innerText = `${geminiTotal.toLocaleString()} tokens`;
+      openaiText.innerText = `${openaiTotal.toLocaleString()} tokens`;
+      claudeText.innerText = `${claudeTotal.toLocaleString()} tokens`;
+
+      geminiBar.style.width = `${Math.round((geminiTotal / maxValue) * 100)}%`;
+      openaiBar.style.width = `${Math.round((openaiTotal / maxValue) * 100)}%`;
+      claudeBar.style.width = `${Math.round((claudeTotal / maxValue) * 100)}%`;
+    } catch (err) {
+      alert('Unable to parse JSON file. Please select a valid TokenTracker export.');
+      console.error(err);
+    }
+  });
+</script>
+
+<style>
+  :root {
+    color-scheme: light;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #1f2937;
+  }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #f3f4f6;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  #ai-token-dashboard {
+    width: min(620px, 100%);
+  }
+
+  .dashboard-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 24px;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+    padding: 28px;
+  }
+
+  .dashboard-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+
+  .dashboard-header h3 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #111827;
+  }
+
+  .dashboard-header p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+  }
+
+  .dashboard-badge {
+    background: #eef2ff;
+    color: #4338ca;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .dashboard-import {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .import-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .import-hint {
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
+  #jsonFile {
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    color: #111827;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .summary-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    padding: 18px 20px;
+  }
+
+  .summary-card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .summary-label {
+    display: block;
+    font-size: 0.84rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+  }
+
+  .summary-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .providers {
+    display: grid;
+    gap: 14px;
+  }
+
+  .provider-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 18px;
+  }
+
+  .provider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .provider-title {
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .provider-icon {
+    margin-right: 8px;
+  }
+
+  .provider-value {
+    font-size: 0.92rem;
+    color: #374151;
+    font-weight: 600;
+  }
+
+  .provider-bar-bg {
+    width: 100%;
+    height: 14px;
+    background: #f3f4f6;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .provider-bar {
+    width: 0%;
+    height: 100%;
+    transition: width 0.4s ease;
+  }
+
+  .provider-bar--gemini {
+    background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+  }
+
+  .provider-bar--openai {
+    background: linear-gradient(90deg, #0f766e, #14b8a6);
+  }
+
+  .provider-bar--claude {
+    background: linear-gradient(90deg, #c2410c, #f97316);
+  }
+
+  @media (max-width: 520px) {
+    body {
+      padding: 16px;
+    }
+
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
